@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "局域网智能遥控器 - 浏览器扩展",
+  "version": "1.1.0",
+  "description": "与电脑端遥控服务配合，精确控制网页播放器（B站/抖音/YouTube 等，兼容 Chrome 与 Edge）",
+  "permissions": ["tabs", "activeTab", "scripting", "storage", "alarms"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

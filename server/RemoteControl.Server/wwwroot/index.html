@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0c11">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>智能遥控器</title>
+  <link rel="stylesheet" href="css/style.css?v=20260909g">
+</head>
+<body>
+  <div class="app-container" id="app">
+
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <div class="connection-info">
+        <div class="connection-dot offline" id="conn-dot"></div>
+        <span class="device-name" id="device-name">未连接</span>
+        <span class="ext-badge" id="ext-badge" title="浏览器扩展状态">扩展未连接</span>
+      </div>
+      <div class="status-right">
+        <span class="volume-text" id="volume-text">🔊 --</span>
+        <button class="icon-btn" id="btn-tabswitch" title="切换到下一个浏览器标签页">⧉</button>
+        <button class="icon-btn accent" id="btn-more" title="更多工具">•••</button>
+      </div>
+    </div>
+
+    <!-- 当前模式与正在播放的内容（极简单行） -->
+    <div class="mode-row">
+      <span class="mode-chip" id="mode-chip">遥控器</span>
+      <span class="mode-title" id="video-title">等待连接电脑…</span>
+    </div>
+    <div class="mode-meta" id="video-meta">连接后可控制电脑上的浏览器</div>
+    <div class="progress-bar" id="progress-bar" title="拖动跳转">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-thumb" id="progress-thumb"></div>
+    </div>
+
+    <!-- 主键区：方向五键 + 返回（语义随模式自动切换） -->
+    <main class="stage">
+      <div class="dpad" id="dpad">
+        <div class="dpad-grid">
+          <!-- 次要功能键：放在方向键之间的角落，比方向键小；只在对应语义下显示 -->
+          <button class="dpad-key aux-key" id="aux-fullscreen" title="全屏" aria-label="全屏">⛶</button>
+          <button class="dpad-key aux-key" id="aux-refresh" title="换一换" aria-label="换一换">🔄</button>
+          <button class="dpad-key" data-dir="up">▲<i class="dk-badge">音量+</i></button>
+          <button class="dpad-key" data-dir="left">◀<i class="dk-badge">退10s</i></button>
+          <button class="dpad-key dpad-ok" data-dir="ok"><span id="ok-glyph">OK</span><i class="dk-badge">播放/暂停</i></button>
+          <button class="dpad-key" data-dir="right">▶<i class="dk-badge">进10s·2x</i></button>
+          <button class="dpad-key" data-dir="down">▼<i class="dk-badge">音量-</i></button>
+        </div>
+        <button class="dpad-key back-key" data-dir="back">↩ 返回</button>
+        <div class="stage-hint" id="dpad-hint">方向键移动选择 · OK 确认 · ↩ 返回</div>
+      </div>
+    </main>
+
+    <!-- 录制提示条 -->
+    <div class="record-banner" id="record-banner">
+      <span class="record-dot"></span>
+      <span>正在录制宏…</span>
+      <button class="mini-btn danger" id="btn-record-stop">停止并保存</button>
+      <button class="mini-btn" id="btn-record-cancel">取消</button>
+    </div>
+  </div>
+
+  <!-- 更多工具 底部弹层 -->
+  <div class="sheet-mask hidden" id="sheet-mask">
+    <div class="bottom-sheet" id="bottom-sheet">
+      <div class="sheet-head">
+        <span class="sheet-title">更多工具</span>
+        <button class="icon-btn" id="sheet-close" title="收起">✕</button>
+      </div>
+      <div class="sheet-body">
+
+        <!-- 播放快捷动作 -->
+        <div class="sheet-quick">
+          <button class="q-btn" id="q-prev"><span class="q-ic">⏮</span>上一集</button>
+          <button class="q-btn" id="q-next"><span class="q-ic">⏭</span>下一集</button>
+          <button class="q-btn" id="q-mute"><span class="q-ic">🔇</span>静音</button>
+        </div>
+
+        <!-- 音量滑杆：精确调音量（原先只能 ±10% 一档） -->
+        <div class="vol-row">
+          <span class="vol-ic">🔊</span>
+          <input type="range" id="vol-slider" min="0" max="100" step="1" value="50" aria-label="音量">
+          <span class="vol-val" id="vol-val">--</span>
+        </div>
+
+        <!-- 触摸板 -->
+        <details class="sheet-sec" open>
+          <summary>🖱️ 触摸板</summary>
+          <div class="touchpad-area">
+            <div class="touchpad-surface" id="touchpad-surface">
+              <span class="touchpad-placeholder">滑动控制鼠标</span>
+            </div>
+            <div class="touchpad-hint">单指移动 · 轻点点击 · 双指滚动 · 双指点按右键</div>
+          </div>
+        </details>
+
+        <!-- 键盘 -->
+        <details class="sheet-sec">
+          <summary>⌨️ 键盘</summary>
+          <div class="kb-quick-keys">
+            <button class="kb-key" data-key="esc">Esc</button>
+            <button class="kb-key" data-key="tab">Tab</button>
+            <button class="kb-key" data-key="enter">Enter</button>
+            <button class="kb-key" data-key="space">Space</button>
+            <button class="kb-key" data-key="backspace">⌫</button>
+            <button class="kb-key" data-key="up">▲</button>
+            <button class="kb-key" data-key="down">▼</button>
+            <button class="kb-key" data-key="left">◀</button>
+            <button class="kb-key" data-key="right">▶</button>
+            <button class="kb-key" data-key="d" title="B站弹幕开关">弹幕</button>
+            <button class="kb-key" data-key="f" title="全屏">全屏F</button>
+          </div>
+          <div class="kb-row">
+            <input type="text" class="kb-input" id="kb-text" placeholder="输入文本后发送到电脑" autocomplete="off">
+            <button class="kb-send" id="kb-send-text">发送</button>
+          </div>
+          <div class="kb-row">
+            <input type="text" class="kb-input" id="kb-combo" placeholder="快捷键，如 ctrl+c / alt+tab" autocomplete="off">
+            <button class="kb-send" id="kb-send-combo">组合键</button>
+          </div>
+        </details>
+
+        <!-- 快捷宏 -->
+        <details class="sheet-sec">
+          <summary>⚡ 快捷宏</summary>
+          <div class="macro-tools">
+            <button class="mini-btn" id="btn-manage-macros">管理 / 录制</button>
+          </div>
+          <div class="macro-grid" id="macro-grid"></div>
+        </details>
+
+        <button class="full-mini" id="btn-settings">⚙️ 设置与录制管理</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 配对弹层 -->
+  <div class="overlay" id="pairing-overlay">
+    <div class="overlay-card">
+      <div class="overlay-icon">🔗</div>
+      <h2>连接电脑</h2>
+      <p>请输入电脑端托盘图标中显示的 6 位配对码</p>
+      <input type="tel" class="pairing-input" id="pairing-code" maxlength="6" inputmode="numeric" placeholder="••••••">
+      <button class="primary-btn" id="pairing-submit">配对连接</button>
+      <div class="overlay-error" id="pairing-error"></div>
+    </div>
+  </div>
+
+  <!-- 设置弹层 -->
+  <div class="overlay hidden" id="settings-overlay">
+    <div class="overlay-card settings-card">
+      <h2>设置</h2>
+
+      <div class="setting-row">
+        <label>触摸板灵敏度 <span id="sens-value">1.2x</span></label>
+        <input type="range" id="sens-slider" min="0.5" max="3" step="0.1" value="1.2">
+      </div>
+
+      <div class="setting-block">
+        <div class="section-title">🎬 宏录制</div>
+        <div class="macro-manage-list" id="macro-manage-list"></div>
+        <button class="primary-btn small" id="btn-record-start">开始录制新宏</button>
+      </div>
+
+      <div class="setting-block">
+        <div class="section-title">ℹ️ 关于</div>
+        <p class="setting-hint" id="about-text">局域网智能遥控器 v1.0.0</p>
+      </div>
+
+      <div class="settings-actions">
+        <button class="mini-btn danger" id="btn-repair">重新配对</button>
+        <button class="primary-btn small" id="btn-settings-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 容器 -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="js/ws.js?v=20260909g"></script>
+  <script src="js/ui.js?v=20260909g"></script>
+  <script src="js/main.js?v=20260909g"></script>
+</body>
+</html>

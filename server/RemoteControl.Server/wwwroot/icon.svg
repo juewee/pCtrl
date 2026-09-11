@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="智能遥控器">
+  <rect width="512" height="512" rx="112" fill="#6c5ce7"/>
+  <circle cx="256" cy="196" r="64" fill="#ffffff"/>
+  <rect x="196" y="308" width="120" height="52" rx="26" fill="#ffffff"/>
+</svg>

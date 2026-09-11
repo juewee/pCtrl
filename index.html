@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>智能遥控器</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #6c5ce7;
+      --primary-light: #a29bfe;
+      --text: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --danger: #ff6b6b;
+      --success: #2ecc71;
+      --radius: 20px;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      background-image: radial-gradient(ellipse at 20% 20%, rgba(108, 92, 231, 0.15) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 80%, rgba(0, 206, 201, 0.1) 0%, transparent 60%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100vh;
+      max-height: 900px;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .connection-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .connection-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(46, 204, 113, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+    }
+
+    .device-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .volume-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .battery-icon {
+      font-size: 1.2rem;
+    }
+
+    /* 播放信息卡 */
+    .player-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: var(--transition);
+    }
+
+    .thumbnail {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #6c5ce7, #00cec9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    }
+
+    .player-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .video-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .video-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .progress-bar {
+      margin-top: 12px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 35%;
+      background: linear-gradient(90deg, var(--primary), #00cec9);
+      border-radius: 2px;
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(255,255,255,0.6);
+    }
+
+    /* 主控制区 */
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .control-btn {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .control-btn:active {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .control-btn .label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .play-btn {
+      background: linear-gradient(135deg, var(--primary), #8e44ad);
+      border: none;
+      box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+      font-size: 2.5rem;
+    }
+
+    .play-btn:active {
+      background: linear-gradient(135deg, #5a4bd1, #7d3c98);
+      box-shadow: 0 4px 15px rgba(108, 92, 231, 0.6);
+      border: none;
+    }
+
+    /* 触摸板切换 */
+    .touchpad-toggle {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+      box-shadow: var(--shadow);
+    }
+
+    .touchpad-toggle:active {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .toggle-switch {
+      width: 48px;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 13px;
+      position: relative;
+      transition: background-color 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: var(--primary);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: left 0.3s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .toggle-switch.active::after {
+      left: 25px;
+    }
+
+    /* 触摸板区域 */
+    .touchpad-area {
+      display: none;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      aspect-ratio: 3 / 2;
+      width: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .touchpad-area.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .touchpad-surface {
+      width: 100%;
+      flex: 1;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.3);
+      font-size: 0.85rem;
+      transition: background-color 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .touchpad-surface:active {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--primary-light);
+    }
+
+    .touchpad-hint {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .touch-dot {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: var(--primary-light);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      opacity: 0.7;
+      box-shadow: 0 0 20px var(--primary);
+    }
+
+    /* 宏按钮 */
+    .macro-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-left: 6px;
+    }
+
+    .macro-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .macro-btn {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+      box-shadow: var(--shadow);
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .macro-btn:active {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .macro-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #fd79a8, #e84393);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .macro-btn:nth-child(1) .macro-icon { background: linear-gradient(135deg, #fdcb6e, #f39c12); }
+    .macro-btn:nth-child(2) .macro-icon { background: linear-gradient(135deg, #00b894, #00cec9); }
+    .macro-btn:nth-child(3) .macro-icon { background: linear-gradient(135deg, #e17055, #d63031); }
+    .macro-btn:nth-child(4) .macro-icon { background: linear-gradient(135deg, #74b9ff, #0984e3); }
+
+    /* AI 输入区 */
+    .ai-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 30px;
+      padding: 8px 12px;
+      box-shadow: var(--shadow);
+      margin-top: auto;
+    }
+
+    .ai-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      padding: 8px 4px;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    .ai-input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .ai-send-btn {
+      background: var(--primary);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: white;
+      transition: background-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+      flex-shrink: 0;
+    }
+
+    .ai-send-btn:active {
+      background: #5a4bd1;
+      box-shadow: 0 2px 8px rgba(108, 92, 231, 0.6);
+    }
+
+    /* 响应式调整 */
+    @media (max-height: 700px) {
+      .control-btn {
+        padding: 12px 0;
+        font-size: 1.2rem;
+      }
+      .play-btn {
+        font-size: 2rem;
+      }
+      .player-card {
+        padding: 12px;
+      }
+      .thumbnail {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+      }
+      /* 触摸板比例保持3:2，不再固定高度 */
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <div class="connection-info">
+        <div class="connection-dot"></div>
+        <span class="device-name">书房电脑</span>
+      </div>
+      <div class="volume-indicator">
+        <span>🔊 65%</span>
+        <span class="battery-icon">🔋</span>
+      </div>
+    </div>
+
+    <!-- 播放信息卡 -->
+    <div class="player-card">
+      <div class="thumbnail">🎬</div>
+      <div class="player-info">
+        <div class="video-title">深海迷航 · 第3集</div>
+        <div class="video-meta">B站 · 1080P · 23:45 / 30:00</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 79%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 播放控制主区域 -->
+    <div class="control-grid">
+      <button class="control-btn" id="btn-prev">
+        <span>⏮</span>
+        <span class="label">上一集</span>
+      </button>
+      <button class="control-btn play-btn" id="btn-play">
+        <span id="play-icon">⏸</span>
+        <span class="label">播放/暂停</span>
+      </button>
+      <button class="control-btn" id="btn-next">
+        <span>⏭</span>
+        <span class="label">下一集</span>
+      </button>
+
+      <button class="control-btn" id="btn-back">
+        <span>⏪</span>
+        <span class="label">快退</span>
+      </button>
+      <button class="control-btn" id="btn-mute">
+        <span>🔇</span>
+        <span class="label">静音</span>
+      </button>
+      <button class="control-btn" id="btn-forward">
+        <span>⏩</span>
+        <span class="label">快进</span>
+      </button>
+
+      <button class="control-btn" id="btn-vol-down">
+        <span>🔉</span>
+        <span class="label">音量-</span>
+      </button>
+      <button class="control-btn" id="btn-fullscreen">
+        <span>⛶</span>
+        <span class="label">全屏</span>
+      </button>
+      <button class="control-btn" id="btn-vol-up">
+        <span>🔊</span>
+        <span class="label">音量+</span>
+      </button>
+    </div>
+
+    <!-- 触摸板切换 -->
+    <div class="touchpad-toggle" id="touchpad-toggle">
+      <div class="toggle-label">
+        <span>🖱️ 触摸板</span>
+      </div>
+      <div class="toggle-switch" id="toggle-switch"></div>
+    </div>
+
+    <!-- 触摸板区域（默认隐藏） -->
+    <div class="touchpad-area" id="touchpad-area">
+      <div class="touchpad-surface" id="touchpad-surface">
+        <span>滑动控制鼠标</span>
+      </div>
+      <div class="touchpad-hint">单指移动 · 双指滚动 · 点击确认</div>
+    </div>
+
+    <!-- 宏按钮区域 -->
+    <div class="macro-section">
+      <div class="section-title">⚡ 快捷宏</div>
+      <div class="macro-grid">
+        <button class="macro-btn" data-macro="打开B站">
+          <div class="macro-icon">▶️</div>
+          <span>打开B站并播放</span>
+        </button>
+        <button class="macro-btn" data-macro="切换全屏">
+          <div class="macro-icon">🖥️</div>
+          <span>切换全屏</span>
+        </button>
+        <button class="macro-btn" data-macro="截图">
+          <div class="macro-icon">📸</div>
+          <span>截图并保存</span>
+        </button>
+        <button class="macro-btn" data-macro="清理缓存">
+          <div class="macro-icon">🧹</div>
+          <span>清理缓存</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- AI 输入栏 -->
+    <div class="ai-input-bar">
+      <input type="text" class="ai-input" placeholder="用自然语言控制电脑，如“播放下一集”" id="ai-input">
+      <button class="ai-send-btn" id="ai-send">➤</button>
+    </div>
+  </div>
+
+  <script>
+    // 模拟交互逻辑
+    const playBtn = document.getElementById('btn-play');
+    const playIcon = document.getElementById('play-icon');
+    let isPlaying = true;
+
+    playBtn.addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      playIcon.textContent = isPlaying ? '⏸' : '▶';
+      // 使用短暂的高亮反馈，不改变尺寸
+      playBtn.style.filter = 'brightness(0.85)';
+      setTimeout(() => {
+        playBtn.style.filter = '';
+      }, 120);
+    });
+
+    // 触摸板切换
+    const toggleSwitch = document.getElementById('toggle-switch');
+    const touchpadArea = document.getElementById('touchpad-area');
+    const touchpadToggle = document.getElementById('touchpad-toggle');
+    let touchpadActive = false;
+
+    touchpadToggle.addEventListener('click', () => {
+      touchpadActive = !touchpadActive;
+      toggleSwitch.classList.toggle('active', touchpadActive);
+      touchpadArea.classList.toggle('active', touchpadActive);
+    });
+
+    // 触摸板移动模拟
+    const touchpadSurface = document.getElementById('touchpad-surface');
+    let touchDot = null;
+    let isTouching = false;
+
+    touchpadSurface.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isTouching = true;
+      const touch = e.touches[0];
+      const rect = touchpadSurface.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      showTouchDot(x, y);
+    });
+
+    touchpadSurface.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!isTouching) return;
+      const touch = e.touches[0];
+      const rect = touchpadSurface.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.width, touch.clientX - rect.left));
+      const y = Math.max(0, Math.min(rect.height, touch.clientY - rect.top));
+      if (touchDot) {
+        touchDot.style.left = x + 'px';
+        touchDot.style.top = y + 'px';
+      }
+    });
+
+    touchpadSurface.addEventListener('touchend', () => {
+      isTouching = false;
+      if (touchDot) {
+        touchDot.remove();
+        touchDot = null;
+      }
+    });
+
+    function showTouchDot(x, y) {
+      if (touchDot) touchDot.remove();
+      touchDot = document.createElement('div');
+      touchDot.className = 'touch-dot';
+      touchDot.style.left = x + 'px';
+      touchDot.style.top = y + 'px';
+      touchpadSurface.appendChild(touchDot);
+    }
+
+    // 宏按钮点击反馈（仅改变亮度）
+    document.querySelectorAll('.macro-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const macroName = btn.dataset.macro;
+        btn.style.filter = 'brightness(0.8)';
+        setTimeout(() => {
+          btn.style.filter = '';
+        }, 120);
+        console.log(`执行宏: ${macroName}`);
+      });
+    });
+
+    // AI 发送
+    const aiInput = document.getElementById('ai-input');
+    const aiSend = document.getElementById('ai-send');
+    aiSend.addEventListener('click', () => {
+      const text = aiInput.value.trim();
+      if (!text) return;
+      console.log(`AI 指令: ${text}`);
+      aiInput.value = '';
+      aiInput.placeholder = '正在执行...';
+      setTimeout(() => {
+        aiInput.placeholder = '用自然语言控制电脑，如“播放下一集”';
+      }, 2000);
+    });
+
+    // 其他按钮简单反馈
+    document.querySelectorAll('.control-btn').forEach(btn => {
+      if (btn !== playBtn) {
+        btn.addEventListener('click', () => {
+          btn.style.filter = 'brightness(0.8)';
+          setTimeout(() => {
+            btn.style.filter = '';
+          }, 120);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

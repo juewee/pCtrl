@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>RemoteControl</AssemblyName>
+    <RootNamespace>RemoteControl.Server</RootNamespace>
+    <Version>1.0.0</Version>
+    <Product>局域网智能遥控器</Product>
+  </PropertyGroup>
+
+  <!-- 手机端网页文件随构建复制到输出目录，保证 exe 直接运行时能提供静态页面 -->
+  <ItemGroup>
+    <Content Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
