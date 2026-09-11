@@ -4,6 +4,12 @@
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4.svg)](https://dotnet.microsoft.com/)
 [![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4.svg)](#)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6.svg)](#)
+[![Build](https://github.com/juewee/pCtrl/actions/workflows/build.yml/badge.svg)](https://github.com/juewee/pCtrl/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/juewee/pCtrl?color=6c5ce7)](https://github.com/juewee/pCtrl/releases/latest)
+
+**简体中文** ｜ [English](README.en.md)
+
+![局域网智能遥控器](docs/banner.svg)
 
 用手机浏览器遥控 Windows 电脑：控制视频播放、模拟鼠标键盘、一键执行宏。免安装 App，电脑跑一个小程序，手机扫码/输地址即用。
 
@@ -41,6 +47,15 @@
 
 ## 系统架构
 
+![系统架构](docs/architecture.svg)
+
+- 手机端只与电脑端服务通信；电脑端作为中枢路由指令、执行本地输入模拟、转发扩展命令
+- 扩展未连接时媒体命令自动回退为模拟按键，功能降级但依然可用
+- 纯局域网运行，无外部服务器依赖
+
+<details>
+<summary>文字版架构图（便于纯文本环境阅读）</summary>
+
 ```
 ┌─────────────┐   HTTP/WS :5000    ┌──────────────────────────┐
 │  手机浏览器   │ ◄────────────────► │  电脑端 RemoteControl.exe │
@@ -56,9 +71,13 @@
                                    └──────────────────────────┘
 ```
 
-- 手机端只与电脑端服务通信；电脑端作为中枢路由指令、执行本地输入模拟、转发扩展命令
-- 扩展未连接时媒体命令自动回退为模拟按键，功能降级但依然可用
-- 纯局域网运行，无外部服务器依赖
+</details>
+
+## 界面预览
+
+![手机端布局示意](docs/ui-layout.svg)
+
+> 上图为布局示意图（wireframe），不是界面截图。欢迎提交真机截图到 `docs/screenshots/`。
 
 ## 技术栈
 
@@ -84,11 +103,24 @@ pCtrl/
 │   │   ├── RemoteSessionManager.cs  # 手机端会话与广播
 │   │   ├── AiService.cs             # 自然语言 → 结构化命令
 │   │   └── TrayIconService.cs       # 托盘图标与菜单
-│   └── wwwroot/                     # 手机端页面（index.html / css / js / sw.js）
-└── extension_v2/                   # 浏览器扩展（manifest.json / background.js / content.js）
+│   └── wwwroot/                     # 手机端页面（index.html / css / js / sw.js / 图标）
+├── extension_v2/                    # 浏览器扩展（manifest.json / background.js / content.js）
+├── docs/                            # 架构图 / 布局示意图（SVG）
+├── .github/workflows/build.yml      # CI：编译 + 发布单文件 exe + 冒烟测试 + 附加到 Release
+└── README.en.md                     # 英文说明
 ```
 
 ## 快速开始
+
+### 0. 直接下载（推荐，免编译）
+
+到 [**Releases**](https://github.com/juewee/pCtrl/releases/latest) 下载 `RemoteControl-<版本>-win-x64.zip`：
+
+- 自包含单文件，**目标电脑无需安装 .NET 运行时**；
+- 解压后保持 `RemoteControl.exe` 与 `wwwroot` 同目录，双击即可（托盘图标显示配对码与访问地址）；
+- 手机与电脑连同一个局域网，浏览器打开该地址并使用配对码。
+
+想自己编译 / 改代码，走下面的步骤。
 
 ### 1. 构建电脑端
 

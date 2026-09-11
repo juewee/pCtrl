@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520" font-family="system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d0e15"/>
+      <stop offset="100%" stop-color="#141526"/>
+    </linearGradient>
+    <linearGradient id="acc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8b7bf7"/>
+      <stop offset="100%" stop-color="#6c5ce7"/>
+    </linearGradient>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6c5ce7"/>
+    </marker>
+  </defs>
+
+  <rect width="960" height="520" rx="18" fill="url(#bg)"/>
+  <text x="40" y="58" font-size="26" font-weight="700" fill="#e9eaf2">系统架构</text>
+  <text x="40" y="86" font-size="14" fill="#8a90a0">手机端只与电脑端通信；电脑端同时负责输入模拟、宏与扩展路由</text>
+
+  <!-- 手机端 -->
+  <rect x="30" y="170" width="215" height="160" rx="14" fill="#171822" stroke="#2a2d3f"/>
+  <rect x="30" y="170" width="215" height="4" rx="2" fill="url(#acc)"/>
+  <text x="52" y="208" font-size="17" font-weight="700" fill="#e9eaf2">手机浏览器</text>
+  <text x="52" y="232" font-size="12.5" fill="#8a90a0">PWA 遥控面板（免安装）</text>
+  <text x="52" y="262" font-size="12.5" fill="#b9bdcc">· 五键遥控 / 触摸板</text>
+  <text x="52" y="284" font-size="12.5" fill="#b9bdcc">· 进度拖动 / 音量滑杆</text>
+  <text x="52" y="306" font-size="12.5" fill="#b9bdcc">· 宏按钮 / 键盘</text>
+
+  <!-- 电脑端 -->
+  <rect x="330" y="150" width="300" height="200" rx="14" fill="#171822" stroke="#6c5ce7"/>
+  <rect x="330" y="150" width="300" height="4" rx="2" fill="url(#acc)"/>
+  <text x="354" y="188" font-size="17" font-weight="700" fill="#e9eaf2">电脑端 RemoteControl.exe</text>
+  <text x="354" y="212" font-size="12.5" fill="#8a90a0">.NET 9 · WinForms 托盘 + Kestrel</text>
+  <text x="354" y="242" font-size="12.5" fill="#b9bdcc">· WebSocket /ws 会话与鉴权</text>
+  <text x="354" y="264" font-size="12.5" fill="#b9bdcc">· SendInput 键鼠模拟（零依赖）</text>
+  <text x="354" y="286" font-size="12.5" fill="#b9bdcc">· 宏录制 / 回放引擎</text>
+  <text x="354" y="308" font-size="12.5" fill="#b9bdcc">· 扩展桥接 :8972 · AI 模块</text>
+  <text x="354" y="332" font-size="11.5" fill="#6f7488">配对码 + Token 鉴权 · 命令白名单 · 限流</text>
+
+  <!-- 扩展 -->
+  <rect x="715" y="170" width="215" height="160" rx="14" fill="#171822" stroke="#2a2d3f"/>
+  <rect x="715" y="170" width="215" height="4" rx="2" fill="url(#acc)"/>
+  <text x="737" y="208" font-size="17" font-weight="700" fill="#e9eaf2">浏览器扩展</text>
+  <text x="737" y="232" font-size="12.5" fill="#8a90a0">Chrome / Edge · Manifest V3</text>
+  <text x="737" y="262" font-size="12.5" fill="#b9bdcc">· 精确控制网页播放器</text>
+  <text x="737" y="284" font-size="12.5" fill="#b9bdcc">· B站 / YouTube / 抖音适配</text>
+  <text x="737" y="306" font-size="12.5" fill="#b9bdcc">· 空间导航选片 / 全屏</text>
+
+  <!-- 连线 -->
+  <line x1="245" y1="250" x2="330" y2="250" stroke="#6c5ce7" stroke-width="2" marker-start="url(#arw)" marker-end="url(#arw)"/>
+  <rect x="238" y="216" width="102" height="22" rx="6" fill="#0d0e15" stroke="#2a2d3f"/>
+  <text x="289" y="232" font-size="11" fill="#b9bdcc" text-anchor="middle">HTTP / WS :5000</text>
+
+  <line x1="630" y1="250" x2="715" y2="250" stroke="#6c5ce7" stroke-width="2" marker-start="url(#arw)" marker-end="url(#arw)"/>
+  <rect x="612" y="216" width="124" height="22" rx="6" fill="#0d0e15" stroke="#2a2d3f"/>
+  <text x="674" y="232" font-size="11" fill="#b9bdcc" text-anchor="middle">WS 127.0.0.1:8972</text>
+
+  <!-- 底部说明 -->
+  <rect x="30" y="392" width="900" height="96" rx="12" fill="#12131f" stroke="#232638"/>
+  <text x="52" y="422" font-size="13" font-weight="700" fill="#cfc7ff">降级策略</text>
+  <text x="52" y="446" font-size="12.5" fill="#b9bdcc">· 扩展在线：直接操作网页 DOM / &lt;video&gt;，精确控制播放、全屏、选片</text>
+  <text x="52" y="468" font-size="12.5" fill="#b9bdcc">· 扩展离线：自动回退为全局模拟按键（空格 / 方向键 / 媒体键），功能降级但依然可用</text>
+</svg>

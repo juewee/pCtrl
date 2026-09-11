@@ -1,0 +1,118 @@
+name: Build
+
+# 自动构建 Windows 桌面端：
+#  - push 到 main：编译 + 发布 + 冒烟测试 + 上传 artifact（可下载）
+#  - push v* 标签：额外把 zip 附加到对应 Release
+#  - 手动触发：可指定把产物附加到某个已有 Release（例如 v1.1.0）
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '把构建产物附加到指定 Release（如 v1.1.0）；留空则只构建'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore server/RemoteControl.Server/RemoteControl.Server.csproj
+
+      - name: Build (Release)
+        run: dotnet build server/RemoteControl.Server/RemoteControl.Server.csproj -c Release --no-restore
+
+      # 自包含单文件：解压即用，目标机器无需安装 .NET
+      - name: Publish
+        run: >
+          dotnet publish server/RemoteControl.Server/RemoteControl.Server.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true
+          -o dist/RemoteControl
+
+      # 产物必须同时含 exe 与 wwwroot（程序按 exe 所在目录提供静态页面）
+      - name: Verify layout
+        shell: pwsh
+        run: |
+          $exe = 'dist/RemoteControl/RemoteControl.exe'
+          $idx = 'dist/RemoteControl/wwwroot/index.html'
+          if (-not (Test-Path $exe)) { throw "发布产物缺少 RemoteControl.exe" }
+          if (-not (Test-Path $idx)) { throw "发布产物缺少 wwwroot/index.html（exe 与 wwwroot 必须同目录）" }
+          Get-ChildItem dist/RemoteControl | Select-Object Name, Length | Format-Table -AutoSize
+
+      # 启动发布出来的 exe，确认真的能用 Web 服务响应（--no-tray 模式）
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path 'dist/RemoteControl/RemoteControl.exe').Path
+          $proc = Start-Process -FilePath $exe -ArgumentList '--no-tray' -PassThru
+          try {
+            $ok = $false
+            foreach ($i in 1..15) {
+              Start-Sleep -Milliseconds 800
+              try {
+                $resp = Invoke-WebRequest -Uri 'http://127.0.0.1:5000/' -UseBasicParsing -TimeoutSec 5
+                if ($resp.StatusCode -eq 200 -and $resp.Content -match '智能遥控器') { $ok = $true; break }
+              } catch { }
+            }
+            if (-not $ok) { throw "启动后 12 秒内 http://127.0.0.1:5000/ 未正常返回页面" }
+            'Smoke test OK: 页面可访问且内容正确'
+            $js = Invoke-WebRequest -Uri 'http://127.0.0.1:5000/js/main.js' -UseBasicParsing -TimeoutSec 5
+            'main.js ' + $js.StatusCode + ' / ' + $js.RawContentLength + ' bytes'
+          } finally {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $ver = $env:RELEASE_TAG
+          if (-not $ver) {
+            if ($env:GITHUB_REF -like 'refs/tags/*') { $ver = $env:GITHUB_REF_NAME }
+            else { $ver = 'dev-' + $env:GITHUB_SHA.Substring(0,7) }
+          }
+          $zip = "dist/RemoteControl-$ver-win-x64.zip"
+          Compress-Archive -Path dist/RemoteControl/* -DestinationPath $zip -Force
+          "VER=$ver" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          "ASSET=$zip" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          "$zip -> " + [math]::Round((Get-Item $zip).Length / 1MB, 1) + ' MB'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RemoteControl-${{ env.VER }}-win-x64
+          path: ${{ env.ASSET }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach to Release
+        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          files: ${{ env.ASSET }}
+          generate_release_notes: false
+          append_body: true
+          body: |
+            **Windows 桌面端（自包含单文件，解压即用，无需安装 .NET）**
+
+            1. 下载并解压 `RemoteControl-${{ env.VER }}-win-x64.zip`
+            2. 保持 `RemoteControl.exe` 与 `wwwroot` 在同一目录，双击 exe（托盘图标会显示配对码与访问地址）
+            3. 手机与电脑连同一个局域网，浏览器打开托盘里的地址，输入 6 位配对码
+            4. 浏览器扩展：`edge://extensions` 开启开发人员模式 → 加载解压缩的扩展 → 选择仓库里的 `extension_v2/`
