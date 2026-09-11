@@ -1,6 +1,11 @@
 # 局域网智能遥控器（Web 版）
 
-用手机浏览器遥控 Windows 电脑：控制视频播放、模拟鼠标键盘、一键执行宏，还能用自然语言下指令。免安装 App，电脑跑一个小程序，手机扫码/输地址即用。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4.svg)](https://dotnet.microsoft.com/)
+[![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4.svg)](#)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6.svg)](#)
+
+用手机浏览器遥控 Windows 电脑：控制视频播放、模拟鼠标键盘、一键执行宏。免安装 App，电脑跑一个小程序，手机扫码/输地址即用。
 
 ## 功能特性
 
@@ -258,6 +263,10 @@ v1.1.0 起按需求把 AI 从界面移除（日常遥控已经够快），服务
 ---
 
 **版本**：v1.1.0 ｜ **平台**：Windows 10/11 + Chrome/Edge + 主流手机浏览器 ｜ 需求详见 [需求文档.md](需求文档.md)
+
+## 许可证
+
+本项目采用 [MIT 许可证](LICENSE) 开源。
 
 ### v1.1.0 修复摘要
 
